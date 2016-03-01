@@ -22,15 +22,18 @@ Eastern Michigan University
 /*enumerated types for token types*/
 typedef enum
 {
-	ID, INTLITERAL, BEGIN, END, READ, WRITE,
-	PLUSOP, MINUSOP, ASSIGNOP, LPAREN, RPAREN,
-	COMMA, SEMICOLON, SCANEOF
+	ID, INTLITERAL, MAIN, READ, WRITE, IF, ELSE, WHILE,
+	PLUSOP, MINUSOP, ASSIGNOP, LPAREN, RPAREN, MULTOP, DIVOP,
+    COMMA, SEMICOLON, SCANEOF, GREATER, GREATEQ, LESS,
+	LESSEQ, EQUALS, NOTEQ, LCURL, RCURL
 }token;
 
 /*string representations of the enum types*/
-char *tokens[] = {"ID","INTLITERAL","BEGIN","END","READ","WRITE",
-				   "PLUSOP","MINUSOP","ASSIGNOP","LPAREN","RPAREN",
-				   "COMMA","SEMICOLON","SCANEOF"};
+char *tokens[] = {"ID","INTLITERAL","MAIN","READ","WRITE", "IF", "ELSE",
+				  "WHILE","PLUSOP","MINUSOP","ASSIGNOP","LPAREN","RPAREN",
+				  "MULTOP","DIVOP","COMMA","SEMICOLON","SCANEOF",
+				  "GREATER", "GREATEQ", "LESS","LESSEQ", "EQUALS", "NOTEQ",
+				  "LCURL","RCURL"};
 
 /*functions delcarations related to scanner*/
 token scanner();
@@ -113,7 +116,11 @@ token scanner()
 		
 		else if (c == ')')
 			return RPAREN;
+		else if (c == '{')
+			return LCURL;
 		
+		else if (c == '}')
+			return RCURL;
 		else if (c == ',')
 			return COMMA;
 			
@@ -121,12 +128,15 @@ token scanner()
 			return SEMICOLON;
 			
 		else if (c == '+')
-			return PLUSOP;	
-			
+			return PLUSOP;
 		else if (c == '-')
+			return MINUSOP;
+		else if (c == '*')
+			return MULTOP;	
+		else if (c == '/')
 			{
 				c = getc(fin);
-				if(c == '-')
+				if(c == '/')
 				{
 					do
 						c = getc(fin);
@@ -136,10 +146,61 @@ token scanner()
 				else
 				{
 					ungetc(c, fin);
-					return MINUSOP;
+					return DIVOP;
 				}
 			}
-		
+		else if (c == '=')
+			{
+				c = getc(fin);
+				if(c == '=')
+				{
+					return EQUALS;
+				}
+				else
+				{
+					ungetc(c, fin);
+					lexical_error();
+				}
+			}
+		else if (c == '!')
+			{
+				c = getc(fin);
+				if(c == '=')
+				{
+					return NOTEQ;
+				}
+				else
+				{
+					ungetc(c, fin);
+					lexical_error();
+				}
+			}
+		else if (c == '<')
+			{
+				c = getc(fin);
+				if(c == '=')
+				{
+					return LESSEQ;
+				}
+				else
+				{
+					ungetc(c, fin);
+					return LESS;
+				}
+			}
+		else if (c == '>')
+			{
+				c = getc(fin);
+				if(c == '=')
+				{
+					return GREATEQ;
+				}
+				else
+				{
+					ungetc(c, fin);
+					return GREATER;
+				}
+			}
 		else if (c == ':')
 		{
 			c = getc(fin);
@@ -181,10 +242,14 @@ void buffer_char(char c)
 /*checks whether buffer is a reserved word or identifier*/
 token check_reserved()
 {
-	if(strcmp(token_buffer, "begin") == 0)
-		return BEGIN;
-	else if(strcmp(token_buffer, "end") == 0)
-		return END;
+	if(strcmp(token_buffer, "main") == 0)
+		return MAIN;
+	else if(strcmp(token_buffer, "if") == 0)
+		return IF;
+	else if(strcmp(token_buffer, "else") == 0)
+		return ELSE;
+	else if(strcmp(token_buffer, "while") == 0)
+		return WHILE;
 	else if(strcmp(token_buffer, "read") == 0)
 		return READ;
 	else if(strcmp(token_buffer, "write") == 0)
@@ -203,186 +268,194 @@ void lexical_error()
 }
 
 /*****************************************************************************/
-
-/*parses source file*/
-void parser()
-{
-	next_token = scanner();
-	program();
-	match(SCANEOF);
-}
-
-/*****************************************************************************/
-
-/*parses a program*/
-/* <program> --> begin<stmtlist>end */
-void program()
-{
-	match(BEGIN);
-	statement_list();
-	match(END);
-}
-
-/*****************************************************************************/
-
-/*parses list of statements*/
-/* <stmtlist> --> <stmt>{<stmt>} */
-void statement_list()
-{
-	statement();
-	while(TRUE)
-	{
-		if(next_token == ID || next_token == READ || next_token == WRITE)
-			statement();
-		else
-			break;
-	}
-}
-
-/*****************************************************************************/
-
-/*parses one statement*/
-/* 	<stmt> -->	id:=<expr>;
-	<stmt> -->	read(<idlist>);
-	<stmt> -->	write(<idlist>); */
-void statement()
-{
-	if(next_token == ID)
-	{
-		match(ID);
-		match(ASSIGNOP);
-		expression();
-		match(SEMICOLON);	
-	}
-	else if(next_token == READ)
-	{
-		match(READ);
-		match(LPAREN);
-		id_list();
-		match(RPAREN);
-		match(SEMICOLON);
-	}
-	else if(next_token == WRITE)
-	{
-		match(WRITE);
-		match(LPAREN);
-		id_list();
-		match(RPAREN);
-		match(SEMICOLON);
-		
-	}
-	else
-		syntax_error();
-}
-
-/*****************************************************************************/
-
-/*parses list of identifiers*/
-/* <idlist> --> id{, id}*/
-void id_list()
-{
-	match(ID);
-	while(next_token == COMMA)
-	{
-		match(COMMA);
-		match(ID);
-	}
-}
-
-/*****************************************************************************/
-
-/*parses list of expressions*/
-/* <explist> --> <exp>,{,<exp>} */
-void expression_list()
-{
-	expression();
-	while(next_token == COMMA)
-	{
-		match(COMMA);
-		expression();
-	}
-}
-
-/*****************************************************************************/
-
-/*parses one expression*/
-/* <exp> --> <term>{<adop><term>} */
-void expression()
-{
-	term();
-	while(next_token == PLUSOP || next_token == MINUSOP)
-	{
-		add_op();
-		term();
-	}
-}
-
-/*****************************************************************************/
-
-/*parses one term*/
-/*	<term> --> id
-	<term> --> integer
-	<term> --> (<expr>) */
-void term()
-{
-	if(next_token == ID)
-		match(ID);
-	else if(next_token == INTLITERAL)
-		match(INTLITERAL);
-	else if(next_token == LPAREN)
-	{
-		match(LPAREN);
-		expression();
-		match(RPAREN);
-	}
-	else
-		syntax_error();
-}
-
-/*****************************************************************************/
-
-/*parses plus or minus operator*/
-/* <adop> --> +|- */
-void add_op()
-{
-	if(next_token == PLUSOP || next_token == MINUSOP)
-		match(next_token);
-	else
-		syntax_error();
-}
-
-/*****************************************************************************/
-
-/*checks whether the expected token and the actual token match,
-and also reads the next token from source file*/
-void match(token tok)
-{
-	if(tok == next_token)
-		;
-	else
-		syntax_error();
-	next_token = scanner();
-}
-
-/*****************************************************************************/
-
-/*reports syntax error*/
-void syntax_error()
-{
-	printf("syntax error in line %d\n", line_num);
-	error = TRUE;
-}
+// 
+// /*parses source file*/
+// void parser()
+// {
+// 	next_token = scanner();
+// 	program();
+// 	match(SCANEOF);
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses a program*/
+// /* <program> --> begin<stmtlist>end */
+// void program()
+// {
+// 	match(BEGIN);
+// 	statement_list();
+// 	match(END);
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses list of statements*/
+// /* <stmtlist> --> <stmt>{<stmt>} */
+// void statement_list()
+// {
+// 	statement();
+// 	while(TRUE)
+// 	{
+// 		if(next_token == ID || next_token == READ || next_token == WRITE)
+// 			statement();
+// 		else
+// 			break;
+// 	}
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses one statement*/
+// /* 	<stmt> -->	id:=<expr>;
+// 	<stmt> -->	read(<idlist>);
+// 	<stmt> -->	write(<idlist>); */
+// void statement()
+// {
+// 	if(next_token == ID)
+// 	{
+// 		match(ID);
+// 		match(ASSIGNOP);
+// 		expression();
+// 		match(SEMICOLON);	
+// 	}
+// 	else if(next_token == READ)
+// 	{
+// 		match(READ);
+// 		match(LPAREN);
+// 		id_list();
+// 		match(RPAREN);
+// 		match(SEMICOLON);
+// 	}
+// 	else if(next_token == WRITE)
+// 	{
+// 		match(WRITE);
+// 		match(LPAREN);
+// 		id_list();
+// 		match(RPAREN);
+// 		match(SEMICOLON);
+// 		
+// 	}
+// 	else
+// 		syntax_error();
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses list of identifiers*/
+// /* <idlist> --> id{, id}*/
+// void id_list()
+// {
+// 	match(ID);
+// 	while(next_token == COMMA)
+// 	{
+// 		match(COMMA);
+// 		match(ID);
+// 	}
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses list of expressions*/
+// /* <explist> --> <exp>,{,<exp>} */
+// void expression_list()
+// {
+// 	expression();
+// 	while(next_token == COMMA)
+// 	{
+// 		match(COMMA);
+// 		expression();
+// 	}
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses one expression*/
+// /* <exp> --> <term>{<adop><term>} */
+// void expression()
+// {
+// 	term();
+// 	while(next_token == PLUSOP || next_token == MINUSOP)
+// 	{
+// 		add_op();
+// 		term();
+// 	}
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses one term*/
+// /*	<term> --> id
+// 	<term> --> integer
+// 	<term> --> (<expr>) */
+// void term()
+// {
+// 	if(next_token == ID)
+// 		match(ID);
+// 	else if(next_token == INTLITERAL)
+// 		match(INTLITERAL);
+// 	else if(next_token == LPAREN)
+// 	{
+// 		match(LPAREN);
+// 		expression();
+// 		match(RPAREN);
+// 	}
+// 	else
+// 		syntax_error();
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*parses plus or minus operator*/
+// /* <adop> --> +|- */
+// void add_op()
+// {
+// 	if(next_token == PLUSOP || next_token == MINUSOP)
+// 		match(next_token);
+// 	else
+// 		syntax_error();
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*checks whether the expected token and the actual token match,
+// and also reads the next token from source file*/
+// void match(token tok)
+// {
+// 	if(tok == next_token)
+// 		;
+// 	else
+// 		syntax_error();
+// 	next_token = scanner();
+// }
+// 
+// /*****************************************************************************/
+// 
+// /*reports syntax error*/
+// void syntax_error()
+// {
+// 	printf("syntax error in line %d\n", line_num);
+// 	error = TRUE;
+// }
 
 /*****************************************************************************/
 
 int main()
 {
-	token t = BEGIN;
-	printf("%s\n",tokens[t]);
-	int i = 0;
-	for (i = 0; i < 14; i++)
-		printf("%s\n",tokens[i]);
-	return 0;
+	fin = fopen("test.txt", "r");
+	token t;
+	int linecounter = 1;
+	do 
+	{
+		t = scanner();
+		if (linecounter < line_num)
+		{
+			printf("\n");
+			linecounter = line_num;
+		}
+		printf("%s ",tokens[t]);
+	}while(t != SCANEOF);
+	fclose(fin); //close file
 }
 
 /*****************************************************************************/

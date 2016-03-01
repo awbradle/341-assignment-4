@@ -27,6 +27,11 @@ typedef enum
 	COMMA, SEMICOLON, SCANEOF
 }token;
 
+/*string representations of the enum types*/
+char *tokens[] = {"ID","INTLITERAL","BEGIN","END","READ","WRITE",
+				   "PLUSOP","MINUSOP","ASSIGNOP","LPAREN","RPAREN",
+				   "COMMA","SEMICOLON","SCANEOF"};
+
 /*functions delcarations related to scanner*/
 token scanner();
 void clear_buffer();
@@ -239,7 +244,7 @@ void statement_list()
 /*parses one statement*/
 /* 	<stmt> -->	id:=<expr>;
 	<stmt> -->	read(<idlist>);
-	<stmt> -->	write(<exprlist>); */
+	<stmt> -->	write(<idlist>); */
 void statement()
 {
 	if(next_token == ID)
@@ -372,6 +377,11 @@ void syntax_error()
 
 int main()
 {
+	token t = BEGIN;
+	printf("%s\n",tokens[t]);
+	int i = 0;
+	for (i = 0; i < 14; i++)
+		printf("%s\n",tokens[i]);
 	return 0;
 }
 

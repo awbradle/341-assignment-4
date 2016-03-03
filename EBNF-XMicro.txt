@@ -1,0 +1,30 @@
+EBNF for XMicro
+
+<program> --> main {<stmtlist>}
+<stmtlist> --> <stmt> {<stmt>}
+
+<stmt> --> id:= <exp>
+<stmt> --> read (<idlist>);
+<stmt> --> write (<idlist>);
+<stmt> --> if (<bool>) {<stmtlist>} [else{<stmtlist>}]
+<stmt> --> while (<bool>) {<stmtlist>}
+
+<idlist> --> id {,id}
+<bool> --> (id|integer)<relop>(id|integer)
+<relop> --> (<|<=|>|>=|==|!=)
+
+<explist> --> <exp>{,<exp>}
+<exp> --> <term>{<adop> <term>}
+
+<term> --> id
+<term> --> integer
+<term> --> <term> <multop> <term>
+<term> --> (<exp>)
+
+<adop> --> (+|-)
+<multop> --> (*|/)
+
+*Note that <explist> is a hold over from Micro. It is not used
+but I left it here because this new language is an extension of
+the old one and could easily be used to expand the capability of
+read and write statements.

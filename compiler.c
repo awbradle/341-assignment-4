@@ -411,6 +411,7 @@ void bool()
 
 /*parses list of expressions*/
 /* <explist> --> <exp>,{,<exp>}*/
+/*Note this hold over from Micro is not used*/
 void expression_list()
 {
 	expression();

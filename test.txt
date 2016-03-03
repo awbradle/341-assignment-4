@@ -3,13 +3,13 @@ main
 	a := 4;
 	if(x < 4)
 	{ //read me read me
-		write(a,b,c,4);
+		write(a,b,c,d);
 	} //comments are fun to read
+	else
+	{
+	x:= 1 + 2 + 3 + 4;
+	x:= 1 + (s + 3) + 4;
+	x:= 1 + 2 * (3 * 4) * b;
+	}
 	b := 3 + 4 / 3 * 4;
 }
-<=
->=
-<
->
-!=
-==

@@ -60,6 +60,7 @@ void syntax_error();
 
 /*global variables*/
 FILE *fin;				//source file
+FILE *fout;				//source file
 token next_token;		//next token in source file
 char token_buffer[100];	//token buffer
 int token_ptr;			//buffer pointer
@@ -360,7 +361,6 @@ void statement()
 			statement_list();
 			match(RCURL);
 		}
-		match(SEMICOLON);
 		
 	}
 	else
@@ -439,13 +439,19 @@ void term()
 	{
 		match(ID);
 		if (next_token == MULTOP || next_token == DIVOP)
+		{
 			mult_op();
+			term();
+		}
 	}
 	else if(next_token == INTLITERAL)
 	{
 		match(INTLITERAL);
 		if (next_token == MULTOP || next_token == DIVOP)
+		{
 			mult_op();
+			term();
+		}
 	}
 	else if(next_token == LPAREN)
 	{
@@ -453,7 +459,10 @@ void term()
 		expression();
 		match(RPAREN);
 		if (next_token == MULTOP || next_token == DIVOP)
+		{
 			mult_op();
+			term();
+		}
 	}
 	else
 		syntax_error();
@@ -518,7 +527,7 @@ void match(token tok)
 /*reports syntax error*/
 void syntax_error()
 {
-	printf("syntax error in line %d\n", line_num);
+	printf("syntax error in line %d error with token%s\n", line_num,tokens[next_token]);
 	error = TRUE;
 }
 
@@ -526,20 +535,63 @@ void syntax_error()
 
 int main()
 {
-	fin = fopen("test.txt", "r");
 	token t;
 	int linecounter = 1;
-	do 
+	int selection;
+	
+	printf("Please Select an Option\n");
+	printf("1-Scan and Output Tokens to a File\n");
+	printf("2-Parse a File\n");
+	printf("3-Quit\n");
+	char input_file[50];
+	char output_file[50];
+	scanf("%d",&selection);
+	
+	switch(selection)
 	{
-		t = scanner();
-		if (linecounter < line_num)
+		case 1: //Scan File and Output Tokens
 		{
-			printf("\n");
-			linecounter = line_num;
+			printf("Enter the input file name: ");
+			scanf("%s",input_file);
+			fin = fopen(input_file, "r");
+			printf("Enter the output file name: ");
+			scanf("%s",output_file);
+			fout = fopen(output_file, "w");
+			
+			do 
+			{
+				t = scanner();
+				if (linecounter < line_num)
+				{
+					fprintf(fout,"\n");
+					linecounter = line_num;
+				}
+				fprintf(fout,"%s ",tokens[t]);
+			}while(t != SCANEOF);
+			fclose(fin); //close file
+			fclose(fout); //close file
+			printf("File successfully scanned\n");
+			break;
 		}
-		printf("%s ",tokens[t]);
-	}while(t != SCANEOF);
-	fclose(fin); //close file
+		case 2: //Parse the file
+		{
+			printf("Enter the input file name: ");
+			scanf("%s",input_file);
+			fin = fopen(input_file, "r");
+			parser();
+			fclose(fin); //close file
+			
+			//Inform user file had no errors
+			if(error == FALSE)
+				printf("\nNo errors in parsing\n");
+			break;
+		}
+		default: //Quit
+		{
+			return 0;
+		}
+	}
+	return 0;
 }
 
 /*****************************************************************************/

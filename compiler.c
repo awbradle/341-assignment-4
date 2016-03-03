@@ -284,7 +284,7 @@ void parser()
 /*****************************************************************************/
 
 /*parses a program*/
-/* <program> --> begin<stmtlist>end*/
+/* <program> --> main{<stmtlist>}*/
 void program()
 {
 	match(MAIN);
@@ -363,6 +363,16 @@ void statement()
 		}
 		
 	}
+	else if(next_token == WHILE)
+	{
+		match(WHILE);
+		match(LPAREN);
+		bool();
+		match(RPAREN);
+		match(LCURL);
+		statement_list();
+		match(RCURL);
+	}
 	else
 		syntax_error();
 }
@@ -384,7 +394,7 @@ void id_list()
 /*****************************************************************************/
 
 /*parses a boolean expression*/
-/* <bool> --> [id{, id}*/
+/* <bool> --> (id|integer)<relop>(id|integer)*/
 void bool()
 {
 	if (next_token == ID)
@@ -497,7 +507,7 @@ void mult_op()
 /*****************************************************************************/
 
 /*parses boolean operators*/
-/* <bool> --> <|<=|>|>=|==|!=
+/* <relop> --> <|<=|>|>=|==|!=
 */
 void relop()
 {
@@ -535,17 +545,17 @@ void syntax_error()
 
 int main()
 {
-	token t;
-	int linecounter = 1;
-	int selection;
+	token t;				//keep track of current token
+	int linecounter = 1;	//keep track of line count for file output
+	int selection;			//user's menu selection
 	
 	printf("Please Select an Option\n");
 	printf("1-Scan and Output Tokens to a File\n");
 	printf("2-Parse a File\n");
 	printf("3-Quit\n");
-	char input_file[50];
-	char output_file[50];
-	scanf("%d",&selection);
+	char input_file[50];	//input file name
+	char output_file[50];	//output file name
+	scanf("%d",&selection);	//get user's selection
 	
 	switch(selection)
 	{
@@ -558,16 +568,18 @@ int main()
 			scanf("%s",output_file);
 			fout = fopen(output_file, "w");
 			
+			//scan each token and output to user entered file
 			do 
 			{
 				t = scanner();
+				//go to next line
 				if (linecounter < line_num)
 				{
 					fprintf(fout,"\n");
 					linecounter = line_num;
 				}
 				fprintf(fout,"%s ",tokens[t]);
-			}while(t != SCANEOF);
+			}while(t != SCANEOF); //quit when EOF reached
 			fclose(fin); //close file
 			fclose(fout); //close file
 			printf("File successfully scanned\n");
